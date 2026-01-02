@@ -1,4 +1,5 @@
-ĐỒ ÁN TỐT NGHIỆP: Website quản lý và kinh doanh sản phẩm công nghệ tích hợp Chatbot AI 11/2025 - Hiện tại
+ĐỒ ÁN TỐT NGHIỆP: Website quản lý và kinh doanh sản phẩm công nghệ tích hợp Chatbot AI  
+Thời gian: 11/2025 - Hiện tại
 - Giới thiệu: Đây là đồ án tốt nghiệp với mục tiêu xây dựng một website quản lý và kinh doanh sản phẩm công nghệ, cho phép người dùng mua sắm trực tuyến và quản trị viên quản lý hệ thống một cách hiệu quả. Hệ thống được tích hợp Chatbot AI nhằm hỗ trợ người dùng tra cứu sản phẩm, tư vấn và giải đáp thắc mắc tự động.
 - Mục tiêu đồ án: 
   + Vận dụng kiến thức đã học về lập trình Web và cơ sở dữ liệu.
