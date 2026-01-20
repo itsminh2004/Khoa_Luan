@@ -30,7 +30,6 @@ Thời gian: 11/2025 - Hiện tại
       + Quản lý người dùng.
       + Quản lý đơn hàng.
       + Thống kê doanh thu.
-      + Quản lý nội dung chatbot (nếu có).
   + Chatbot AI: 
       + Hỗ trợ trả lời câu hỏi về sản phẩm.
       + Gợi ý sản phẩm phù hợp với nhu cầu người dùng.
