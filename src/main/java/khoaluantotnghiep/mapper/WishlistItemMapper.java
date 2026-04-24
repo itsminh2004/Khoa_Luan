@@ -1,7 +1,6 @@
 package khoaluantotnghiep.mapper;
 
-import khoaluantotnghiep.model.Product;
-import khoaluantotnghiep.model.WishlistItem;
+import khoaluantotnghiep.model.*;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
@@ -61,6 +60,44 @@ public class WishlistItemMapper implements RowMapper<WishlistItem> {
         product.setImage(rs.getString("product_image"));
 
         item.setProduct(product);
+
+        int variantId = rs.getInt("wishlist_variant_id");
+        if (!rs.wasNull()) {
+            item.setVariantId(variantId);
+
+            ProductVariantNew variant = new ProductVariantNew();
+            variant.setId(variantId);
+            variant.setProductId(rs.getInt("product_id"));
+            variant.setPrice(rs.getBigDecimal("variant_price"));
+            variant.setPriceSale(rs.getBigDecimal("variant_price_sale"));
+            variant.setStock(rs.getInt("variant_stock"));
+
+            // COLOR
+            int colorId = rs.getInt("variant_color_id");
+            if (!rs.wasNull()) {
+                ProductColor color = new ProductColor();
+                color.setId(colorId);
+                color.setColorName(rs.getString("variant_color_name"));
+                color.setColorCode(rs.getString("variant_color_code"));
+
+                variant.setColorId(colorId);
+                variant.setColor(color);
+            }
+
+            // RAM / ROM
+            int ramRomId = rs.getInt("variant_ram_rom_id");
+            if (!rs.wasNull()) {
+                ProductRamRom ramRom = new ProductRamRom();
+                ramRom.setId(ramRomId);
+                ramRom.setRam(rs.getString("variant_ram"));
+                ramRom.setRom(rs.getString("variant_rom"));
+
+                variant.setRamRomId(ramRomId);
+                variant.setRamRom(ramRom);
+            }
+
+            item.setVariant(variant);
+        }
         return item;
     }
 }

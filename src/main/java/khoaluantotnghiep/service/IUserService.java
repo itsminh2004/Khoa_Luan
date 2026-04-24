@@ -18,4 +18,7 @@ public interface IUserService {
     User findOne(int id);
     boolean sendPasswordResetCode(String email);
     boolean resetPassword(String email, String code, String newPassword);
+    boolean updateProfile(int userId, String fullName);
+    boolean changePassword(String email, String oldPassword, String newPassword);
+    boolean adminResetPassword(String email,  String newPassword);
 }

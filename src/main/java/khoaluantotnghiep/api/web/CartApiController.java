@@ -4,8 +4,11 @@ import khoaluantotnghiep.dto.CartItemDto;
 import khoaluantotnghiep.dto.CartRequest;
 import khoaluantotnghiep.dto.CartUpdateRequest;
 import khoaluantotnghiep.dto.ProductDto;
+import khoaluantotnghiep.dto.ProductVariantNewDto;
 import khoaluantotnghiep.model.CartItem;
 import khoaluantotnghiep.model.Product;
+import khoaluantotnghiep.model.ProductRamRom;
+import khoaluantotnghiep.model.ProductVariantNew;
 import khoaluantotnghiep.service.ICartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"}, allowCredentials = "true")
+@CrossOrigin(origins = { "http://127.0.0.1:5500", "http://localhost:5500" }, allowCredentials = "true")
 @RestController
 @RequestMapping("/api/cart")
 public class CartApiController {
@@ -34,7 +37,11 @@ public class CartApiController {
     @PostMapping
     public ResponseEntity<CartItemDto> addToCart(@RequestBody CartRequest request) {
         int quantity = request.getQuantity() <= 0 ? 1 : request.getQuantity();
-        CartItem item = cartService.addItem(request.getUserId(), request.getProductId(), quantity);
+        CartItem item = cartService.addItem(
+                request.getUserId(),
+                request.getProductId(),
+                request.getVariantId(),
+                quantity);
         return ResponseEntity.ok(toDto(item));
     }
 
@@ -85,6 +92,7 @@ public class CartApiController {
         dto.setId(item.getId());
         dto.setUserId(item.getUserId());
         dto.setProductId(item.getProductId());
+        dto.setVariantId(item.getVariantId());
         dto.setQuantity(item.getQuantity());
         dto.setCreatedAt(item.getCreatedAt());
 
@@ -99,15 +107,37 @@ public class CartApiController {
                     product.getStock(),
                     product.getImage(),
                     product.getCategoryName(),
-                    product.getAlias()
-            );
+                    product.getAlias(),
+                    product.isActive());
             productDto.setSeriesId(product.getSeriesId() == 0 ? null : product.getSeriesId());
             productDto.setSeriesName(product.getSeriesName());
             dto.setProduct(productDto);
         }
 
+        // Map variant information
+        if (item.getVariant() != null) {
+            ProductVariantNew variant = item.getVariant();
+            ProductVariantNewDto variantDto = new ProductVariantNewDto();
+            variantDto.setId(variant.getId());
+            variantDto.setColorId(variant.getColorId());
+            variantDto.setRamRomId(variant.getRamRomId());
+            variantDto.setPrice(variant.getPrice());
+            variantDto.setPriceSale(variant.getPriceSale());
+            variantDto.setStock(variant.getStock());
+
+            if (variant.getColor() != null) {
+                variantDto.setColorName(variant.getColor().getColorName());
+            }
+            if (variant.getRamRom() != null) {
+                ProductRamRom rr = variant.getRamRom();
+                String ramRomStr = (rr.getRam() != null ? rr.getRam() : "N/A") + " / "
+                        + (rr.getRom() != null ? rr.getRom() : "N/A");
+                variantDto.setRamRom(ramRomStr);
+            }
+
+            dto.setVariant(variantDto);
+        }
+
         return dto;
     }
 }
-
-

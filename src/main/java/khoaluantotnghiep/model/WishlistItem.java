@@ -6,8 +6,10 @@ public class WishlistItem {
     private int id;
     private int userId;
     private int productId;
+    private Integer variantId;
     private Date createdAt;
     private Product product;
+    private ProductVariantNew variant;
 
     public int getId() {
         return id;
@@ -33,6 +35,14 @@ public class WishlistItem {
         this.productId = productId;
     }
 
+    public Integer getVariantId() {
+        return variantId;
+    }
+
+    public void setVariantId(Integer variantId) {
+        this.variantId = variantId;
+    }
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -47,6 +57,14 @@ public class WishlistItem {
 
     public void setProduct(Product product) {
         this.product = product;
+    }
+
+    public ProductVariantNew getVariant() {
+        return variant;
+    }
+
+    public void setVariant(ProductVariantNew variant) {
+        this.variant = variant;
     }
 }
 

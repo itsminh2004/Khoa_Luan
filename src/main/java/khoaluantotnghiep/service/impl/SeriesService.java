@@ -1,6 +1,8 @@
 package khoaluantotnghiep.service.impl;
 
+import khoaluantotnghiep.Dao.IProductCategory;
 import khoaluantotnghiep.Dao.ISeriesDao;
+import khoaluantotnghiep.Dao.impl.SeriesDao;
 import khoaluantotnghiep.model.Series;
 import khoaluantotnghiep.service.ISeriesService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,8 @@ import java.util.List;
 public class SeriesService implements ISeriesService {
     @Autowired
     private ISeriesDao seriesDao;
+    @Autowired
+    private IProductCategory productCategoryDao;
 
     @Override
     public Series findOne(int id) {
@@ -43,5 +47,21 @@ public class SeriesService implements ISeriesService {
     @Override
     public void delete(int id) {
         seriesDao.delete(id);
+    }
+
+    @Override
+    public void saveAll(List<Series> items) {
+        List<khoaluantotnghiep.model.ProductCategory> cats = productCategoryDao.findAll();
+        for (Series item : items) {
+            if (item.getCategoryName() != null && !item.getCategoryName().isEmpty()) {
+                for (khoaluantotnghiep.model.ProductCategory cat : cats) {
+                    if (cat.getName().equalsIgnoreCase(item.getCategoryName())) {
+                        item.setCategoryId(cat.getId());
+                        break;
+                    }
+                }
+            }
+            seriesDao.insert(item);
+        }
     }
 }

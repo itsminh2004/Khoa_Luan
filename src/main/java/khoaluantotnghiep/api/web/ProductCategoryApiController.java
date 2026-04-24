@@ -1,8 +1,11 @@
 package khoaluantotnghiep.api.web;
 
 import khoaluantotnghiep.dto.ProductCategoryDto;
+import khoaluantotnghiep.dto.RootCategoryDto;
 import khoaluantotnghiep.model.ProductCategory;
+import khoaluantotnghiep.model.RootCategory;
 import khoaluantotnghiep.service.IProductCategoryService;
+import khoaluantotnghiep.service.IRootCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,17 +19,18 @@ import java.util.List;
 @RequestMapping("/api")
 public class ProductCategoryApiController {
     @Autowired
-    private IProductCategoryService categoryService;
+    private IRootCategoryService rootCategoryService;
 
     @RequestMapping(value = "/categories", method = RequestMethod.GET, produces = "application/json; charset=UTF-8")
     @ResponseBody
-    public List<ProductCategoryDto> listCategories() {
-        List<ProductCategory> categories = categoryService.findAll();
-        List<ProductCategoryDto> dtos = new ArrayList<>();
+    public List<RootCategoryDto> listCategories() {
+        List<RootCategory> categories = rootCategoryService.findAll();
+        List<RootCategoryDto> dtos = new ArrayList<>();
         if (categories != null) {
-            for (ProductCategory c : categories) {
+            for (RootCategory c : categories) {
                 String img = c.getImage();
-                ProductCategoryDto dto = new ProductCategoryDto(c.getId(), c.getName(), c.getDescription(), img, c.getAlias(), c.getParentId());
+               RootCategoryDto dto = new RootCategoryDto(c.getId(), c.getName(), c.getDescription(), img,
+                        c.getAlias());
                 dtos.add(dto);
             }
         }

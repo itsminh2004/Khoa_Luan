@@ -30,6 +30,14 @@ public class OrderController {
         return mav;
     }
 
+    @RequestMapping(value = "/admin-orders/detail/{id}", method = RequestMethod.GET)
+    public ModelAndView detailOrder(@PathVariable("id") int id) {
+        Order order = orderService.findById(id);
+        ModelAndView mav = new ModelAndView("admin/order/detail");
+        mav.addObject("order", order);
+        return mav;
+    }
+
     @RequestMapping(value = "/admin-orders/edit/{id}", method = RequestMethod.GET)
     public ModelAndView editOrder(@PathVariable("id") int id) {
         Order order = orderService.findById(id);

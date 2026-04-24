@@ -27,8 +27,8 @@ public class ProductDao implements IProductDao {
         product.setAlias(SlugUtils.toSlug(product.getName()));
 
         String sql = "INSERT INTO tb_product " +
-                "(Name, Description, Price, PriceSale, Stock, CreatedDate, Active, CategoryId, SeriesId, Alias, Image, has_variants, default_ram, default_rom) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(Name, Description, Price, PriceSale, Stock, CreatedDate, Active, CategoryId, SeriesId, BrandId, Alias, Image, has_variants, default_ram, default_rom) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update((Connection con) -> {
@@ -44,11 +44,12 @@ public class ProductDao implements IProductDao {
             ps.setBoolean(7, product.isActive());
             ps.setInt(8, product.getCategoryId());
             ps.setObject(9, product.getSeriesId() == 0 ? null : product.getSeriesId());
-            ps.setString(10, product.getAlias());
-            ps.setString(11, product.getImage());
-            ps.setBoolean(12, product.isHasVariants());
-            ps.setString(13, product.getDefaultRam());
-            ps.setString(14, product.getDefaultRom());
+            ps.setObject(10, product.getBrandId());
+            ps.setString(11, product.getAlias());
+            ps.setString(12, product.getImage());
+            ps.setBoolean(13, product.isHasVariants());
+            ps.setString(14, product.getDefaultRam());
+            ps.setString(15, product.getDefaultRom());
             return ps;
         }, keyHolder);
 
@@ -73,7 +74,7 @@ public class ProductDao implements IProductDao {
         updateProduct.setAlias(SlugUtils.toSlug(updateProduct.getName()));
 
         String sql = "UPDATE tb_product " +
-                "SET Name=?, Description=?, Price=?, PriceSale=?, Stock=?, Active=?, CategoryId=?, SeriesId=?, Alias=?, Image=?, has_variants=?, default_ram=?, default_rom=? WHERE Id=?";
+                "SET Name=?, Description=?, Price=?, PriceSale=?, Stock=?, Active=?, CategoryId=?, SeriesId=?, BrandId=?, Alias=?, Image=?, has_variants=?, default_ram=?, default_rom=? WHERE Id=?";
 
         int row = jdbcTemplate.update(sql,
                 updateProduct.getName(),
@@ -84,6 +85,7 @@ public class ProductDao implements IProductDao {
                 updateProduct.isActive(),
                 updateProduct.getCategoryId(),
                 updateProduct.getSeriesId() == 0 ? null : updateProduct.getSeriesId(),
+                updateProduct.getBrandId(),
                 updateProduct.getAlias(),
                 updateProduct.getImage(),
                 updateProduct.isHasVariants(),
@@ -104,19 +106,23 @@ public class ProductDao implements IProductDao {
 
     @Override
     public List<Product> findAll() {
-        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName " +
+        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName, " +
+                "b.Id AS BrandId, b.Name AS BrandName, b.Logo AS BrandLogo " +
                 "FROM tb_product p " +
                 "LEFT JOIN tb_productcategory c ON p.CategoryId = c.Id " +
-                "LEFT JOIN tb_series s ON p.SeriesId = s.Id";
+                "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+                "LEFT JOIN tb_brand b ON p.BrandId = b.Id";
         return jdbcTemplate.query(sql, new ProductMapper());
     }
 
     @Override
     public Product findOne(int id) {
-        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName " +
+        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName, " +
+                "b.Id AS BrandId, b.Name AS BrandName, b.Logo AS BrandLogo " +
                 "FROM tb_product p " +
                 "LEFT JOIN tb_productcategory c ON p.CategoryId = c.Id " +
                 "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+                "LEFT JOIN tb_brand b ON p.BrandId = b.Id " +
                 "WHERE p.Id = ?";
         try {
             return jdbcTemplate.queryForObject(sql, new ProductMapper(), id);
@@ -127,10 +133,12 @@ public class ProductDao implements IProductDao {
 
     @Override
     public Product findCategoryById(int categoryId) {
-        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName " +
+        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName, " +
+                "b.Id AS BrandId, b.Name AS BrandName, b.Logo AS BrandLogo " +
                 "FROM tb_product p " +
                 "LEFT JOIN tb_productcategory c ON p.CategoryId = c.Id " +
                 "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+                "LEFT JOIN tb_brand b ON p.BrandId = b.Id " +
                 "WHERE c.Id = ? LIMIT 1";
         try {
             return jdbcTemplate.queryForObject(sql, new ProductMapper(), categoryId);
@@ -141,10 +149,12 @@ public class ProductDao implements IProductDao {
 
     @Override
     public List<Product> findAllPaging(int offset, int limit) {
-        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName " +
+        String sql = "SELECT p.*, c.Name AS CategoryName, s.Name AS SeriesName, " +
+                "b.Id AS BrandId, b.Name AS BrandName, b.Logo AS BrandLogo " +
                 "FROM tb_product p " +
                 "LEFT JOIN tb_productcategory c ON p.CategoryId = c.Id " +
                 "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+                "LEFT JOIN tb_brand b ON p.BrandId = b.Id " +
                 "ORDER BY p.Id DESC " +
                 "LIMIT ?, ?";
 
@@ -155,5 +165,14 @@ public class ProductDao implements IProductDao {
     public int countAll() {
         String sql = "SELECT COUNT(*) FROM tb_product";
         return jdbcTemplate.queryForObject(sql, Integer.class);
+    }
+
+    @Override
+    public void reduceStock(int productId, int quantity) {
+        String sql="UPDATE tb_product SET Stock=Stock - ? WHERE Id=? AND Stock >= ?";
+        int rows = jdbcTemplate.update(sql,quantity,productId,quantity);
+        if(rows == 0){
+            throw new RuntimeException("Insufficient stock for product ID:"+ productId);
+        }
     }
 }

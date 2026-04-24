@@ -13,7 +13,36 @@ public class Order {
     private String phone;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private Integer couponId;          // PHẢI là Integer (nullable)
+    private double discountAmount;     // default 0
+    private String paymentMethod;
     private List<OrderItem> items;
+
+    // ===== getters & setters =====
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public Integer getCouponId() {
+        return couponId;
+    }
+
+    public void setCouponId(Integer couponId) {
+        this.couponId = couponId;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+    }
 
     public int getId() {
         return id;

@@ -39,20 +39,40 @@ public class ProductApiController {
     @Autowired
     private IProductSpecificationService productSpecificationService;
 
-    // ✅ Lấy toàn bộ sản phẩm
+    @Autowired
+    private IRootCategoryService rootCategoryService;
+
+    // Lấy toàn bộ sản phẩm
     @RequestMapping(value = "/products", method = RequestMethod.GET, produces = "application/json; charset=UTF-8")
     @ResponseBody
     public List<ProductDto> listProducts() {
         List<Product> products = productService.findAll();
         return products.stream().map(this::convertToDto).collect(Collectors.toList());
     }
+    @GetMapping(value = "/products/search", produces = "application/json; charset=UTF-8")
+    @ResponseBody
+    public List<ProductDto> searchProductsByName(@RequestParam(name = "q", required = false) String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        final String q = keyword.trim().toLowerCase();
 
-    // ✅ Lấy sản phẩm theo tên danh mục (ví dụ: "Điện thoại")
+        List<Product> products = productService.findAll();
+
+        return products.stream()
+                .filter(p -> p.getName() != null && p.getName().toLowerCase().contains(q))
+                .limit(20) // giới hạn số kết quả trả về cho search
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    // Lấy sản phẩm theo tên danh mục (ví dụ: "Điện thoại")
     @GetMapping(value = "/products/by-category", produces = "application/json; charset=UTF-8")
     @ResponseBody
     public List<ProductDto> listProductsByCategory(@RequestParam("name") String categoryName) {
         List<Product> products = productService.findAll();
-        if (categoryName == null) categoryName = "";
+        if (categoryName == null)
+            categoryName = "";
         final String q = categoryName.trim().toLowerCase();
 
         return products.stream()
@@ -61,59 +81,64 @@ public class ProductApiController {
                 .collect(Collectors.toList());
     }
 
-    // ✅ Lấy sản phẩm theo danh mục cha (theo TÊN)
+    // Lấy sản phẩm theo danh mục cha (theo TÊN)
     @GetMapping(value = "/products/by-parent-category", produces = "application/json; charset=UTF-8")
     @ResponseBody
     public List<ProductDto> listProductsByParentCategoryName(@RequestParam("name") String parentName) {
-        if (parentName == null || parentName.trim().isEmpty()) return Collections.emptyList();
+        if (parentName == null || parentName.trim().isEmpty())
+            return Collections.emptyList();
         String q = parentName.trim().toLowerCase();
 
         List<ProductCategory> allCats = productCategoryService.findAll();
-        if (allCats == null || allCats.isEmpty()) return Collections.emptyList();
+        if (allCats == null || allCats.isEmpty())
+            return Collections.emptyList();
 
+        List<RootCategory> rootCats = rootCategoryService.findAll();
         // Tìm danh mục cha theo tên
-        ProductCategory parent = allCats.stream()
-                .filter(c -> c.getParentId() == null && c.getName() != null && c.getName().toLowerCase().contains(q))
+        RootCategory parent = rootCats.stream()
+                .filter(c -> c.getName() != null && c.getName().toLowerCase().contains(q))
                 .findFirst()
                 .orElse(null);
-        if (parent == null) return Collections.emptyList();
+        if (parent == null)
+            return Collections.emptyList();
 
-        int parentId = parent.getId();
+        int rootId = parent.getId();
 
         // Lấy id các danh mục con
         List<Integer> childCatIds = allCats.stream()
-                .filter(c -> c.getParentId() != null && c.getParentId() == parentId)
+                .filter(c -> c.getRootCategoryId() != null && c.getRootCategoryId() == rootId)
                 .map(ProductCategory::getId)
                 .collect(Collectors.toList());
 
-        // Lọc sản phẩm theo categoryId thuộc danh mục con hoặc cha
+        // Lọc sản phẩm theo categoryId thuộc danh mục con
         List<Product> products = productService.findAll();
         return products.stream()
-                .filter(p -> p != null && (p.getCategoryId() == parentId || childCatIds.contains(p.getCategoryId())))
+                .filter(p -> p != null && childCatIds.contains(p.getCategoryId()))
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    // ✅ Lấy sản phẩm theo danh mục cha (theo ID)
-    @GetMapping(value = "/products/by-parent-category-id/{parentId}", produces = "application/json; charset=UTF-8")
+    // Lấy sản phẩm theo danh mục cha (theo ID)
+    @GetMapping(value = "/products/by-parent-category-id/{rootId}", produces = "application/json; charset=UTF-8")
     @ResponseBody
-    public List<ProductDto> listProductsByParentCategoryId(@PathVariable("parentId") int parentId) {
+    public List<ProductDto> listProductsByParentCategoryId(@PathVariable("rootId") int rootId) {
         List<ProductCategory> allCats = productCategoryService.findAll();
-        if (allCats == null || allCats.isEmpty()) return Collections.emptyList();
+        if (allCats == null || allCats.isEmpty())
+            return Collections.emptyList();
 
         List<Integer> childCatIds = allCats.stream()
-                .filter(c -> c.getParentId() != null && c.getParentId() == parentId)
+                .filter(c -> c.getRootCategoryId() != null && c.getRootCategoryId() == rootId)
                 .map(ProductCategory::getId)
                 .collect(Collectors.toList());
 
         List<Product> products = productService.findAll();
         return products.stream()
-                .filter(p -> p != null && (p.getCategoryId() == parentId || childCatIds.contains(p.getCategoryId())))
+                .filter(p -> p != null && childCatIds.contains(p.getCategoryId()))
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    // ✅ Lấy sản phẩm theo seriesId
+    // Lấy sản phẩm theo seriesId
     @GetMapping(value = "/products/by-series/{seriesId}", produces = "application/json; charset=UTF-8")
     @ResponseBody
     public List<ProductDto> listProductsBySeries(@PathVariable("seriesId") int seriesId) {
@@ -123,13 +148,31 @@ public class ProductApiController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+    @GetMapping(value = "/products/by-brand", produces = "application/json; charset=UTF-8")
+    @ResponseBody
+    public List<ProductDto> listProductsByBrand(@RequestParam("name") String brandName) {
 
-    // ✅ Lấy chi tiết sản phẩm theo id
+        if (brandName == null || brandName.trim().isEmpty())
+            return Collections.emptyList();
+
+        String q = brandName.trim().toLowerCase();
+
+        List<Product> products = productService.findAll();
+
+        return products.stream()
+                .filter(p -> p.getBrandName() != null &&
+                        p.getBrandName().toLowerCase().contains(q))
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    // Lấy chi tiết sản phẩm theo id
     @RequestMapping(value = "/products/{id}", method = RequestMethod.GET, produces = "application/json; charset=UTF-8")
     @ResponseBody
     public ProductDto getProductDetail(@PathVariable("id") int id) {
         Product p = productService.findOne(id);
-        if (p == null) return null;
+        if (p == null)
+            return null;
 
         List<ProductImage> imgs = productImageService.findByProductId(id);
         String mainImage = null;
@@ -148,13 +191,13 @@ public class ProductApiController {
                 p.getStock(),
                 mainImage,
                 p.getCategoryName(),
-                p.getAlias()
-        );
+                p.getAlias(),
+                p.isActive());
         attachVariantsAndSpecs(dto, p);
         return dto;
     }
 
-    // ✅ Chuyển Product -> ProductDto
+    // Chuyển Product -> ProductDto
     private ProductDto convertToDto(Product p) {
         List<ProductImage> imgs = productImageService.findByProductId(p.getId());
         String mainImage = null;
@@ -173,18 +216,27 @@ public class ProductApiController {
                 p.getStock(),
                 mainImage,
                 p.getCategoryName(),
-                p.getAlias()
-        );
+                p.getAlias(),
+                p.isActive());
 
         // Gắn thêm series (nếu có)
         dto.setSeriesId(p.getSeriesId() == 0 ? null : p.getSeriesId());
         dto.setSeriesName(p.getSeriesName());
-        // Không cần variants/specs cho list, chỉ dùng ở trang chi tiết
+
+        // Gắn thêm brand (nếu có)
+        dto.setBrandId(p.getBrandId());
+        dto.setBrandName(p.getBrandName());
+        dto.setBrandLogo(p.getBrandLogo());
+
+        // Gắn thêm variants/specs để hỗ trợ lọc ở frontend (RAM, ROM, etc.)
+        attachVariantsAndSpecs(dto, p);
+
         return dto;
     }
 
     private void attachVariantsAndSpecs(ProductDto dto, Product p) {
-        // ===== Variants (CHỈ dùng cấu trúc mới ProductVariantNew + ProductColor + ProductRamRom) =====
+        // ===== Variants (CHỈ dùng cấu trúc mới ProductVariantNew + ProductColor +
+        // ProductRamRom) =====
         List<ProductVariantDto> variantDtos = new java.util.ArrayList<>();
 
         // Không phụ thuộc cờ hasVariants nữa, cứ lấy variantsNew trong DB
@@ -194,12 +246,22 @@ public class ProductApiController {
         if (variantsNew != null && !variantsNew.isEmpty()) {
             for (ProductVariantNew v : variantsNew) {
                 ProductColor color = productColorService.findById(v.getColorId());
-                ProductRamRom ramRom = productRamRomService.findById(v.getRamRomId());
-
                 ProductVariantDto vd = new ProductVariantDto();
                 vd.setId(v.getId());
                 vd.setColor(color != null ? color.getColorName() : "N/A");
-                vd.setConfiguration(ramRom != null ? (ramRom.getRam() + "/" + ramRom.getRom()) : "N/A");
+
+                ProductRamRom ramRom = null;
+                if (v.getRamRomId() != null) {
+                    ramRom = productRamRomService.findById(v.getRamRomId());
+                    if (ramRom != null) {
+                        vd.setConfiguration(ramRom.getRam() + " / " + ramRom.getRom());
+                    } else {
+                        vd.setConfiguration("N/A");
+                    }
+                } else {
+                    vd.setConfiguration("N/A");
+                }
+
                 vd.setPrice(v.getPrice());
                 vd.setPriceSale(v.getPriceSale());
                 vd.setStock(v.getStock());
@@ -234,7 +296,7 @@ public class ProductApiController {
             List<ProductSpecificationDto> specDtos = new java.util.ArrayList<>();
             for (ProductSpecification s : specs) {
                 ProductSpecificationDto sd = new ProductSpecificationDto();
-                sd.setAttrValue(s.getAttrValue());
+                sd.setAttrKey(s.getAttrKey());
                 sd.setAttrValue(s.getAttrValue());
                 specDtos.add(sd);
             }

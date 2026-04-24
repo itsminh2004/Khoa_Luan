@@ -17,4 +17,5 @@ public interface IUserDao {
     boolean updatePassword(String email, String newPassword);
     boolean verifyResetCode(String email, String code);
     boolean updatePasswordAndClearCode(String email, String newPassword);
+    boolean updateProfile(int userId, String fullName);
 }

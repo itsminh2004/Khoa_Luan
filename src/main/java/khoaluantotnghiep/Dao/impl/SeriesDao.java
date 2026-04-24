@@ -35,7 +35,10 @@ public class SeriesDao implements ISeriesDao {
 
     @Override
     public List<Series> findAll() {
-        String sql = "SELECT * FROM tb_series ORDER BY Id DESC";
+        String sql = "SELECT s.*, c.Name AS categoryName " +
+                "FROM tb_series s " +
+                "INNER JOIN tb_productcategory c ON s.CategoryId = c.Id " +
+                "ORDER BY s.Id DESC";
         return jdbcTemplate.query(sql, new SeriesMapper());
     }
 

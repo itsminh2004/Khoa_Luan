@@ -1,22 +1,26 @@
 package khoaluantotnghiep.model;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 public class ProductCategory {
     private int id;
     private String name;
     private String description;
     private String image;
-    private LocalDateTime createdDate;
+    private Date createdDate;
     private String alias;
-    private Integer parentId;
-    private String parentName;
+    private Integer rootCategoryId;
+    private String rootCategoryName;
+
     public ProductCategory() {
     }
+
     // Getter - Setter
     public int getId() {
         return id;
     }
+
     public void setId(int id) {
         this.id = id;
     }
@@ -24,6 +28,7 @@ public class ProductCategory {
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -31,6 +36,7 @@ public class ProductCategory {
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
@@ -38,29 +44,40 @@ public class ProductCategory {
     public String getImage() {
         return image;
     }
+
     public void setImage(String image) {
         this.image = image;
     }
 
-    public LocalDateTime getCreatedDate() {
+    public Date getCreatedDate() {
         return createdDate;
     }
-    public void setCreatedDate(LocalDateTime createdDate) {
+
+    public void setCreatedDate(Date createdDate) {
         this.createdDate = createdDate;
     }
 
     public String getAlias() {
         return alias;
     }
+
     public void setAlias(String alias) {
         this.alias = alias;
     }
 
-    public Integer getParentId() {return parentId;}
+    public Integer getRootCategoryId() {
+        return rootCategoryId;
+    }
 
-    public void setParentId(Integer parentId) {this.parentId = parentId;}
+    public void setRootCategoryId(Integer rootCategoryId) {
+        this.rootCategoryId = rootCategoryId;
+    }
 
-    public String getParentName() {return parentName;}
+    public String getRootCategoryName() {
+        return rootCategoryName;
+    }
 
-    public void setParentName(String parentName) {this.parentName = parentName;}
+    public void setRootCategoryName(String rootCategoryName) {
+        this.rootCategoryName = rootCategoryName;
+    }
 }

@@ -1,6 +1,7 @@
 package khoaluantotnghiep.service.impl;
 
 import khoaluantotnghiep.Dao.IProductCategory;
+import khoaluantotnghiep.Dao.IRootCategoryDao;
 import khoaluantotnghiep.model.ProductCategory;
 import khoaluantotnghiep.service.IProductCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +14,13 @@ public class ProductCategoryService implements IProductCategoryService {
     @Autowired
     private IProductCategory productCategory;
 
+    @Autowired
+    private IRootCategoryDao rootCategoryDao;
 
     @Override
     public ProductCategory insert(ProductCategory category) {
-        if (category.getParentId() == null || category.getParentId() == 0) {
-            category.setParentId(null);
+        if (category.getRootCategoryId() == null || category.getRootCategoryId() == 0) {
+            category.setRootCategoryId(null);
         }
         return productCategory.insert(category);
     }
@@ -58,4 +61,19 @@ public class ProductCategoryService implements IProductCategoryService {
     }
 
 
+    @Override
+    public void saveAll(List<ProductCategory> items) {
+        List<khoaluantotnghiep.model.RootCategory> roots = rootCategoryDao.findAll();
+        for (ProductCategory item : items) {
+            if (item.getRootCategoryName() != null && !item.getRootCategoryName().isEmpty()) {
+                for (khoaluantotnghiep.model.RootCategory root : roots) {
+                    if (root.getName().equalsIgnoreCase(item.getRootCategoryName())) {
+                        item.setRootCategoryId(root.getId());
+                        break;
+                    }
+                }
+            }
+            this.insert(item);
+        }
+    }
 }

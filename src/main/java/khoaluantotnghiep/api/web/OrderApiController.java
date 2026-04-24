@@ -1,10 +1,13 @@
 package khoaluantotnghiep.api.web;
 
 import khoaluantotnghiep.dto.*;
+import khoaluantotnghiep.model.Coupon;
 import khoaluantotnghiep.model.Order;
 import khoaluantotnghiep.model.OrderItem;
 import khoaluantotnghiep.model.Product;
+import khoaluantotnghiep.model.ProductVariantNew;
 import khoaluantotnghiep.service.ICartService;
+import khoaluantotnghiep.service.ICouponService;
 import khoaluantotnghiep.service.IOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"})
+@CrossOrigin(origins = { "http://127.0.0.1:5500", "http://localhost:5500" })
 @RestController
 @RequestMapping("/api/orders")
 public class OrderApiController {
@@ -27,11 +30,20 @@ public class OrderApiController {
     @Autowired
     private ICartService cartService;
 
+    @Autowired
+    private ICouponService couponService;
+
     @PostMapping
-    public ResponseEntity<OrderDto> createOrder(@RequestBody OrderRequest request) {
+    public ResponseEntity<?> createOrder(@RequestBody OrderRequest request) {
         try {
             Order order = new Order();
             order.setUserId(request.getUserId());
+
+            // --- TÍNH TOÁN LẠI TIỀN & MÃ GIẢM GIÁ Ở BACKEND ---
+            // Không hoàn toàn tin vào subtotal/discount từ FE, nhưng vẫn dùng làm input.
+            double subtotal = request.getSubtotal();
+            double shipping = request.getShipping();
+            double discount = 0;
 
             // Gộp địa chỉ thành shipping_address
             OrderRequest.CustomerInfo customer = request.getCustomer();
@@ -41,19 +53,23 @@ public class OrderApiController {
                     shippingAddress.append(customer.getAddress());
                 }
                 if (customer.getWard() != null && !customer.getWard().trim().isEmpty()) {
-                    if (shippingAddress.length() > 0) shippingAddress.append(", ");
+                    if (shippingAddress.length() > 0)
+                        shippingAddress.append(", ");
                     shippingAddress.append(customer.getWard());
                 }
                 if (customer.getDistrict() != null && !customer.getDistrict().trim().isEmpty()) {
-                    if (shippingAddress.length() > 0) shippingAddress.append(", ");
+                    if (shippingAddress.length() > 0)
+                        shippingAddress.append(", ");
                     shippingAddress.append(customer.getDistrict());
                 }
                 if (customer.getProvince() != null && !customer.getProvince().trim().isEmpty()) {
-                    if (shippingAddress.length() > 0) shippingAddress.append(", ");
+                    if (shippingAddress.length() > 0)
+                        shippingAddress.append(", ");
                     shippingAddress.append(customer.getProvince());
                 }
                 if (customer.getNote() != null && !customer.getNote().trim().isEmpty()) {
-                    if (shippingAddress.length() > 0) shippingAddress.append(". Ghi chú: ");
+                    if (shippingAddress.length() > 0)
+                        shippingAddress.append(". Ghi chú: ");
                     shippingAddress.append(customer.getNote());
                 }
 
@@ -61,34 +77,83 @@ public class OrderApiController {
                 order.setPhone(customer.getPhone());
             }
 
-            // Tính total_amount = subtotal + shipping
-            double totalAmount = request.getSubtotal() + request.getShipping();
+            // ✅ Xử lý & validate mã giảm giá trên backend nếu có
+            if (request.getCouponId() != null && request.getCouponId() > 0) {
+                try {
+                    Coupon coupon = couponService.findOne(request.getCouponId());
+                    if (coupon != null && couponService.isValid(coupon.getCode(), subtotal)) {
+                        // Tính lại số tiền giảm dựa trên loại coupon
+                        if ("PERCENT".equals(coupon.getDiscountType())) {
+                            discount = subtotal * (coupon.getDiscountValue() / 100.0);
+                            if (coupon.getMaxDiscountAmount() != null
+                                    && discount > coupon.getMaxDiscountAmount()) {
+                                discount = coupon.getMaxDiscountAmount();
+                            }
+                        } else if ("AMOUNT".equals(coupon.getDiscountType())) {
+                            discount = coupon.getDiscountValue();
+                        }
+
+                        order.setCouponId(coupon.getId());
+                        order.setDiscountAmount(discount);
+                    }
+                } catch (Exception ignore) {
+                    // Nếu có lỗi khi xử lý coupon thì bỏ qua, không làm fail đơn
+                }
+            }
+
+            // Tính total_amount = subtotal + shipping - discount (không âm)
+            double totalAmount = Math.max(0, subtotal + shipping - discount);
             order.setTotalAmount(totalAmount);
             order.setShippingAddress(shippingAddress.toString());
+            order.setPaymentMethod(request.getPaymentMethod());
             order.setStatus("PENDING");
 
             // Convert order items
             if (request.getItems() != null) {
-                List<OrderItem> items = request.getItems().stream().map(itemRequest -> {
+                List<OrderItem> items = new java.util.ArrayList<>();
+                for (OrderRequest.OrderItemRequest itemRequest : request.getItems()) {
                     OrderItem item = new OrderItem();
                     item.setProductId(itemRequest.getProductId());
+
+                    Integer vId = itemRequest.getVariantId();
+                    if (vId != null && vId <= 0)
+                        vId = null; // Normalize 0 or negative to null
+                    item.setVariantId(vId);
+
                     item.setQuantity(itemRequest.getQuantity());
                     item.setPrice(itemRequest.getPrice());
-                    return item;
-                }).collect(Collectors.toList());
+                    items.add(item);
+                }
                 order.setItems(items);
             }
 
             Order createdOrder = orderService.createOrder(order);
 
-            // Clear cart after successful order
-            cartService.clearCart(request.getUserId());
+            // ✅ Tăng usedCount của coupon sau khi tạo đơn hàng thành công
+            if (request.getCouponId() != null && request.getCouponId() > 0) {
+                try {
+                    Coupon coupon = couponService.findOne(request.getCouponId());
+                    if (coupon != null) {
+                        coupon.setUsedCount(coupon.getUsedCount() + 1);
+                        couponService.save(coupon);
+                    }
+                } catch (Exception e) {
+                    // Log error nhưng không làm fail đơn hàng
+                    System.err.println("Error updating coupon usedCount: " + e.getMessage());
+                }
+            }
+
+            // Clear cart immediately ONLY if COD
+            // For BANK_TRANSFER (VNPAY) or MOMO, wait for payment callback
+            if ("COD".equalsIgnoreCase(request.getPaymentMethod())) {
+                cartService.clearCart(request.getUserId());
+            }
 
             return ResponseEntity.ok(toDto(createdOrder, request));
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
 
@@ -158,6 +223,7 @@ public class OrderApiController {
         dto.setShippingAddress(order.getShippingAddress());
         dto.setCreatedAt(order.getCreatedAt());
         dto.setUpdatedAt(order.getUpdatedAt());
+        dto.setPaymentMethod(order.getPaymentMethod());
 
         // Nếu có originalRequest, lấy thông tin chi tiết từ đó
         if (originalRequest != null && originalRequest.getCustomer() != null) {
@@ -172,7 +238,8 @@ public class OrderApiController {
             dto.setPaymentMethod(originalRequest.getPaymentMethod());
             dto.setSubtotal(originalRequest.getSubtotal());
             dto.setShipping(originalRequest.getShipping());
-            dto.setTotal(originalRequest.getTotal());
+            // Tổng thực tế lấy từ order (đã trừ giảm giá nếu có)
+            dto.setTotal(order.getTotalAmount());
         } else {
             // Parse shipping_address để tách thành các trường (nếu có thể)
             String shippingAddr = order.getShippingAddress();
@@ -200,6 +267,7 @@ public class OrderApiController {
         dto.setId(item.getId());
         dto.setOrderId(item.getOrderId());
         dto.setProductId(item.getProductId());
+        dto.setVariantId(item.getVariantId());
         dto.setQuantity(item.getQuantity());
         dto.setPrice(item.getPrice());
         dto.setCreatedAt(item.getCreatedAt());
@@ -215,14 +283,35 @@ public class OrderApiController {
                     product.getStock(),
                     product.getImage(),
                     product.getCategoryName(),
-                    product.getAlias()
-            );
+                    product.getAlias(),
+                    product.isActive());
             productDto.setSeriesId(product.getSeriesId() == 0 ? null : product.getSeriesId());
             productDto.setSeriesName(product.getSeriesName());
             dto.setProduct(productDto);
         }
 
+        // Map variant information
+        if (item.getVariant() != null) {
+            ProductVariantNew variant = item.getVariant();
+            ProductVariantNewDto variantDto = new ProductVariantNewDto();
+            variantDto.setId(variant.getId());
+            variantDto.setColorId(variant.getColorId());
+            variantDto.setRamRomId(variant.getRamRomId());
+            variantDto.setPrice(variant.getPrice());
+            variantDto.setPriceSale(variant.getPriceSale());
+            variantDto.setStock(variant.getStock());
+
+            if (variant.getColor() != null) {
+                variantDto.setColorName(variant.getColor().getColorName());
+            }
+            if (variant.getRamRom() != null) {
+                String ramRomStr = variant.getRamRom().getRam() + "GB / " + variant.getRamRom().getRom() + "GB";
+                variantDto.setRamRom(ramRomStr);
+            }
+
+            dto.setVariant(variantDto);
+        }
+
         return dto;
     }
 }
-

@@ -6,9 +6,11 @@ public class CartItem {
     private int id;
     private int userId;
     private int productId;
+    private Integer variantId;
     private int quantity;
     private Date createdAt;
     private Product product;
+    private ProductVariantNew variant;
 
     public int getId() {
         return id;
@@ -34,6 +36,14 @@ public class CartItem {
         this.productId = productId;
     }
 
+    public Integer getVariantId() {
+        return variantId;
+    }
+
+    public void setVariantId(Integer variantId) {
+        this.variantId = variantId;
+    }
+
     public int getQuantity() {
         return quantity;
     }
@@ -56,6 +66,14 @@ public class CartItem {
 
     public void setProduct(Product product) {
         this.product = product;
+    }
+
+    public ProductVariantNew getVariant() {
+        return variant;
+    }
+
+    public void setVariant(ProductVariantNew variant) {
+        this.variant = variant;
     }
 }
 

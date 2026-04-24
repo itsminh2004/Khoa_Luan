@@ -75,8 +75,8 @@ public class WishlistApiController {
                     product.getStock(),
                     product.getImage(),
                     product.getCategoryName(),
-                    product.getAlias()
-            );
+                    product.getAlias(),
+                    product.isActive());
             productDto.setSeriesId(product.getSeriesId() == 0 ? null : product.getSeriesId());
             productDto.setSeriesName(product.getSeriesName());
             dto.setProduct(productDto);

@@ -1,186 +1,184 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@include file="/common/taglib.jsp"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@include file="/common/taglib.jsp" %>
 
-<style>
-    /* Tổng thể Card tối giản */
-    .card-edit {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        max-width: 800px;
-        margin: 0 auto; /* Căn giữa trang cho chuyên nghiệp */
-    }
-
-    .card-header-edit {
-        background: #fff;
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid #f1f5f9;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .card-header-edit h5 {
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
-        font-size: 1.25rem;
-    }
-
-    .card-body-edit {
-        padding: 2rem;
-    }
-
-    /* Định dạng Form */
-    .form-group-custom {
-        margin-bottom: 1.5rem;
-    }
-
-    .label-custom {
-        display: block;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-        margin-bottom: 0.5rem;
-    }
-
-    .form-control-custom {
-        width: 100%;
-        padding: 0.6rem 1rem;
-        font-size: 1rem;
-        color: #1e293b;
-        background-color: #fff;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        transition: all 0.2s;
-    }
-
-    .form-control-custom:focus {
-        outline: none;
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    /* Dropdown select */
-    .form-select-custom {
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 0.7rem center;
-        background-size: 1.5em 1.5em;
-        padding-right: 2.5rem;
-    }
-
-    /* Nút bấm */
-    .btn-save {
-        background: #2563eb;
-        color: white;
-        border: none;
-        padding: 0.6rem 2rem;
-        border-radius: 8px;
-        font-weight: 600;
-        transition: background 0.2s;
-    }
-
-    .btn-save:hover {
-        background: #1d4ed8;
-    }
-
-    .btn-cancel {
-        color: #64748b;
-        background: #f1f5f9;
-        border: none;
-        padding: 0.6rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    .btn-cancel:hover {
-        background: #e2e8f0;
-        color: #1e293b;
-    }
-
-    .btn-delete-link {
-        color: #ef4444;
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-decoration: none;
-        padding: 0.6rem;
-    }
-
-    .btn-delete-link:hover {
-        text-decoration: underline;
-    }
-</style>
-
-<div class="card-edit">
-    <div class="card-header-edit">
-        <h5>Sửa đơn hàng #${order.id}</h5>
-        <a href="${pageContext.request.contextPath}/admin-orders" class="btn-cancel">
-            <i class="fas fa-chevron-left mr-1"></i> Trở về
-        </a>
-    </div>
-
-    <div class="card-body-edit">
-        <form method="post" action="${pageContext.request.contextPath}/admin-orders/edit/${order.id}">
-
-            <div class="form-group-custom">
-                <label class="label-custom">Tên khách hàng</label>
-                <input type="text" class="form-control-custom" name="customerName" value="${order.customerName}" required>
+<!-- HEADER -->
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row align-items-center mb-2">
+            <div class="col-sm-6">
+                <h1>Sửa đơn hàng #${order.id}</h1>
             </div>
+            <div class="col-sm-6 text-right">
+                <ol class="breadcrumb float-sm-right mb-0 bg-transparent">
+                    <li class="breadcrumb-item">
+                        <a href="${pageContext.request.contextPath}/admin-home">Trang chủ</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="${pageContext.request.contextPath}/admin-orders">Đơn hàng</a>
+                    </li>
+                    <li class="breadcrumb-item active">Chỉnh sửa</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
 
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group-custom">
-                        <label class="label-custom">Số điện thoại</label>
-                        <input type="text" class="form-control-custom" name="phone" value="${order.phone}" required>
+<!-- CONTENT -->
+<section class="content">
+    <div class="container-fluid">
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <h3 class="card-title mb-0">Thông tin đơn hàng</h3>
+
+                            <a href="${pageContext.request.contextPath}/admin-orders"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Quay lại
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+
+                        <form method="post"
+                              action="${pageContext.request.contextPath}/admin-orders/edit/${order.id}">
+
+                            <!-- Customer -->
+                            <div class="form-group">
+                                <label>Tên khách hàng</label>
+                                <input type="text" class="form-control"
+                                       name="customerName"
+                                       value="${order.customerName}" required>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Số điện thoại</label>
+                                        <input type="text" class="form-control"
+                                               name="phone"
+                                               value="${order.phone}" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Trạng thái</label>
+                                        <select class="form-control" name="status" required>
+                                            <c:forEach var="status" items="${statuses}">
+                                                <option value="${status}"
+                                                        <c:if test="${status == order.status}">selected</c:if>>
+                                                    <c:choose>
+                                                        <c:when test="${status eq 'PENDING'}">Chờ xác nhận</c:when>
+                                                        <c:when test="${status eq 'CONFIRMED'}">Đã xác nhận</c:when>
+                                                        <c:when test="${status eq 'SHIPPING'}">Đang giao</c:when>
+                                                        <c:when test="${status eq 'DELIVERED'}">Đã giao</c:when>
+                                                        <c:when test="${status eq 'CANCELLED'}">Đã hủy</c:when>
+                                                        <c:otherwise>${status}</c:otherwise>
+                                                    </c:choose>
+                                                </option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Address -->
+                            <div class="form-group">
+                                <label>Địa chỉ giao hàng</label>
+                                <textarea class="form-control"
+                                          rows="2"
+                                          name="shippingAddress"
+                                          required>${order.shippingAddress}</textarea>
+                            </div>
+
+                            <!-- PRODUCTS -->
+                            <div class="mt-4">
+                                <h6 class="text-muted text-uppercase mb-3">
+                                    <i class="fas fa-shopping-bag mr-1"></i> Sản phẩm
+                                </h6>
+
+                                <div class="border rounded p-3">
+
+                                    <c:forEach var="item" items="${order.items}">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+
+                                            <!-- LEFT -->
+                                            <div class="d-flex align-items-center">
+
+                                                <c:if test="${not empty item.product.image}">
+                                                    <img src="${pageContext.request.contextPath}${item.product.image}"
+                                                         class="mr-3 rounded"
+                                                         style="width:60px;height:60px;object-fit:cover;"
+                                                         onerror="this.src='${pageContext.request.contextPath}/template/admin/dist/img/no-image.png';">
+                                                </c:if>
+
+                                                <div>
+                                                    <div class="font-weight-bold">
+                                                            ${item.product.name}
+                                                    </div>
+
+                                                    <small class="text-muted">
+                                                        <c:if test="${not empty item.variant}">
+                                                            ${not empty item.variant.color ? item.variant.color.colorName : 'N/A'}
+                                                            -
+                                                            ${not empty item.variant.ramRom ? item.variant.ramRom.ram.concat("/").concat(item.variant.ramRom.rom) : 'N/A'}
+                                                        </c:if>
+                                                    </small>
+                                                </div>
+
+                                            </div>
+
+                                            <!-- RIGHT -->
+                                            <div class="text-right">
+                                                <div class="font-weight-bold">
+                                                    <fmt:formatNumber value="${item.price}" type="number" groupingUsed="true"/> ₫
+                                                </div>
+                                                <small class="text-muted">
+                                                    SL: ${item.quantity}
+                                                </small>
+                                            </div>
+
+                                        </div>
+                                    </c:forEach>
+
+                                    <!-- TOTAL -->
+                                    <div class="d-flex justify-content-between mt-3 pt-2">
+                                        <strong>Tổng cộng:</strong>
+                                        <strong class="text-danger">
+                                            <fmt:formatNumber value="${order.totalAmount}" type="number" groupingUsed="true"/> ₫
+                                        </strong>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- ACTION -->
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Cập nhật
+                                </button>
+
+                                <a href="${pageContext.request.contextPath}/admin-orders/delete/${order.id}"
+                                   class="btn btn-outline-danger"
+                                   onclick="return confirm('Xóa đơn hàng #${order.id}?');">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </a>
+
+                            </div>
+
+                        </form>
+
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group-custom">
-                        <label class="label-custom">Trạng thái xử lý</label>
-                        <select class="form-control-custom form-select-custom" name="status" required>
-                            <c:forEach var="status" items="${statuses}">
-                                <option value="${status}" <c:if test="${status == order.status}">selected</c:if>>
-                                    <c:choose>
-                                        <c:when test="${status eq 'PENDING'}">Chờ xác nhận</c:when>
-                                        <c:when test="${status eq 'CONFIRMED'}">Đã xác nhận</c:when>
-                                        <c:when test="${status eq 'SHIPPING'}">Đang giao hàng</c:when>
-                                        <c:when test="${status eq 'DELIVERED'}">Giao thành công</c:when>
-                                        <c:when test="${status eq 'CANCELLED'}">Đã hủy bỏ</c:when>
-                                        <c:otherwise>${status}</c:otherwise>
-                                    </c:choose>
-                                </option>
-                            </c:forEach>
-                        </select>
-                    </div>
-                </div>
-            </div>
 
-            <div class="form-group-custom">
-                <label class="label-custom">Địa chỉ nhận hàng</label>
-                <textarea class="form-control-custom" rows="3" name="shippingAddress" required>${order.shippingAddress}</textarea>
             </div>
+        </div>
 
-            <hr class="my-4" style="border-color: #f1f5f9;">
-
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <button type="submit" class="btn-save">
-                        Cập nhật đơn hàng
-                    </button>
-                </div>
-                <a href="${pageContext.request.contextPath}/admin-orders/delete/${order.id}"
-                   class="btn-delete-link"
-                   onclick="return confirm('Xóa vĩnh viễn đơn hàng #${order.id}?');">
-                    <i class="fas fa-trash-alt mr-1"></i> Xóa đơn hàng
-                </a>
-            </div>
-        </form>
     </div>
-</div>
+</section>

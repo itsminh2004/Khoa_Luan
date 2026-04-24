@@ -1,9 +1,9 @@
 package khoaluantotnghiep.dto;
 
 public class ProductSpecificationDto {
-    private String attrKey;  // Changed from 'key' to match tb_product_attributes.attr_key
+    private String attrKey; // Internal key
+    private String attrName; // For frontend (backward compatibility)
     private String attrValue;
-
 
     public String getAttrKey() {
         return attrKey;
@@ -11,6 +11,15 @@ public class ProductSpecificationDto {
 
     public void setAttrKey(String attrKey) {
         this.attrKey = attrKey;
+        this.attrName = attrKey; // Keep them in sync
+    }
+
+    public String getAttrName() {
+        return attrName;
+    }
+
+    public void setAttrName(String attrName) {
+        this.attrName = attrName;
     }
 
     public String getAttrValue() {
@@ -21,5 +30,3 @@ public class ProductSpecificationDto {
         this.attrValue = attrValue;
     }
 }
-
-

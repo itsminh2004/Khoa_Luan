@@ -6,7 +6,7 @@ import java.util.List;
 public class ProductVariantNewDto {
     private int id;
     private int colorId;
-    private int ramRomId;
+    private Integer ramRomId;
 
     private String colorName;
     private String ramRom; // "8GB / 256GB"
@@ -14,14 +14,7 @@ public class ProductVariantNewDto {
     private BigDecimal price;
     private BigDecimal priceSale;
     private int stock;
-
-    public List<String> getImages() {
-        return images;
-    }
-
-    public void setImages(List<String> images) {
-        this.images = images;
-    }
+    private List<String> images;
 
     public int getId() {
         return id;
@@ -39,11 +32,11 @@ public class ProductVariantNewDto {
         this.colorId = colorId;
     }
 
-    public int getRamRomId() {
+    public Integer getRamRomId() {
         return ramRomId;
     }
 
-    public void setRamRomId(int ramRomId) {
+    public void setRamRomId(Integer ramRomId) {
         this.ramRomId = ramRomId;
     }
 
@@ -87,5 +80,11 @@ public class ProductVariantNewDto {
         this.stock = stock;
     }
 
-    private List<String> images;
+    public List<String> getImages() {
+        return images;
+    }
+
+    public void setImages(List<String> images) {
+        this.images = images;
+    }
 }

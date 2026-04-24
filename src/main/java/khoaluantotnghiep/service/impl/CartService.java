@@ -21,10 +21,15 @@ public class CartService implements ICartService {
     }
 
     @Override
-    public CartItem addItem(int userId, int productId, int quantity) {
+    public CartItem addItem(int userId, int productId, Integer variantId, int quantity) {
+        if (variantId != null && variantId <= 0) {
+            variantId = null;
+        }
         Assert.isTrue(quantity > 0, "Quantity must be positive");
 
-        CartItem existing = cartDao.findByUserAndProduct(userId, productId);
+        // Tìm item đã tồn tại với cùng product và variant
+        CartItem existing = cartDao.findByUserProductAndVariant(userId, productId, variantId);
+
         if (existing != null) {
             int newQuantity = existing.getQuantity() + quantity;
             return cartDao.updateQuantity(existing.getId(), newQuantity);
@@ -33,6 +38,7 @@ public class CartService implements ICartService {
         CartItem item = new CartItem();
         item.setUserId(userId);
         item.setProductId(productId);
+        item.setVariantId(variantId);
         item.setQuantity(quantity);
         return cartDao.insert(item);
     }
@@ -58,5 +64,3 @@ public class CartService implements ICartService {
         cartDao.deleteByUser(userId);
     }
 }
-
-

@@ -11,4 +11,5 @@ public interface ISeriesService {
     Series insert(Series series);
     Series update(Series series);
     void delete(int id);
+    void saveAll(List<Series> items);
 }

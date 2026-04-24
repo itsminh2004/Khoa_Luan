@@ -32,4 +32,9 @@ public class BlogCommentService implements IBlogCommentService {
     public List<BlogComment> findByPostId(int postId) {
         return blogCommentDao.findByPostId(postId);
     }
+
+    @Override
+    public BlogComment findById(int id) {
+        return blogCommentDao.findById(id);
+    }
 }

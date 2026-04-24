@@ -15,6 +15,9 @@ public class Product {
     private boolean active;
     private int categoryId;
     private int seriesId;           // 🔹 thêm
+    private Integer brandId;          // 🔹 thương hiệu
+    private String brandName;         // 🔹 tên thương hiệu
+    private String brandLogo;         // 🔹 logo thương hiệu
     private String alias;
     private String image;
     private String categoryName;
@@ -25,6 +28,8 @@ public class Product {
 
     private ProductCategory productCategory;
     private List<ProductImage> images = new ArrayList<>();
+
+    private List<ProductVariantNew> variants = new ArrayList<>();
 
     // === Getters/Setters ===
     public int getId() { return id; }
@@ -67,6 +72,15 @@ public class Product {
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
 
     public String getSeriesName() { return seriesName; } // 🔹 thêm
+
+    public Integer getBrandId() { return brandId; }
+    public void setBrandId(Integer brandId) { this.brandId = brandId; }
+
+    public String getBrandName() { return brandName; }
+    public void setBrandName(String brandName) { this.brandName = brandName; }
+
+    public String getBrandLogo() { return brandLogo; }
+    public void setBrandLogo(String brandLogo) { this.brandLogo = brandLogo; }
     public void setSeriesName(String seriesName) { this.seriesName = seriesName; }
 
     public boolean isHasVariants() { return hasVariants; }
@@ -88,5 +102,13 @@ public class Product {
         ProductImage img = new ProductImage();
         img.setImageUrl(imageUrl);
         this.images.add(img);
+    }
+
+    public List<ProductVariantNew> getVariants() {
+        return variants;
+    }
+
+    public void setVariants(List<ProductVariantNew> variants) {
+        this.variants = variants;
     }
 }

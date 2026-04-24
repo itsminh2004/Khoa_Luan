@@ -267,4 +267,16 @@ public class UserDao implements IUserDao {
         }
         return false;
     }
+
+    @Override
+    public boolean updateProfile(int userId, String fullName) {
+        String sql = "UPDATE tb_users SET full_name = ? WHERE id = ?";
+        try {
+            int rows = jdbcTemplate.update(sql, fullName, userId);
+            return rows > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

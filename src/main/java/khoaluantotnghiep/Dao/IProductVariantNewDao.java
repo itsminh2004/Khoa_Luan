@@ -6,13 +6,22 @@ import java.util.List;
 
 public interface IProductVariantNewDao {
     ProductVariantNew save(ProductVariantNew variant);
+
     ProductVariantNew update(ProductVariantNew variant);
+
     void delete(int id);
+
     List<ProductVariantNew> findByProductId(int productId);
+
     ProductVariantNew findById(int id);
-    ProductVariantNew findByColorIdAndRamRomId(int colorId, int ramRomId);
+
+    ProductVariantNew findByColorIdAndRamRomId(int colorId, Integer ramRomId);
+
     List<ProductVariantNew> findByColorId(int colorId);
+
     void deleteByColorId(int colorId);
+
+    void reduceStock(int variantId, int quantity);
+
+    void syncProductStock(int productId);
 }
-
-

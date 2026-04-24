@@ -6,7 +6,7 @@ public class ProductVariantNew {
     private int id;
     private int productId;
     private int colorId;
-    private int ramRomId;
+    private Integer ramRomId;
     private BigDecimal price;
     private BigDecimal priceSale;
     private int stock;
@@ -39,11 +39,11 @@ public class ProductVariantNew {
         this.colorId = colorId;
     }
 
-    public int getRamRomId() {
+    public Integer getRamRomId() {
         return ramRomId;
     }
 
-    public void setRamRomId(int ramRomId) {
+    public void setRamRomId(Integer ramRomId) {
         this.ramRomId = ramRomId;
     }
 
@@ -87,4 +87,3 @@ public class ProductVariantNew {
         this.ramRom = ramRom;
     }
 }
-

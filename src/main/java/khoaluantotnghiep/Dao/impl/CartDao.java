@@ -22,6 +22,7 @@ public class CartDao implements ICartDao {
             "c.id AS cart_id, " +
             "c.user_id AS cart_user_id, " +
             "c.product_id AS cart_product_id, " +
+            "c.variant_id AS cart_variant_id, " +
             "c.quantity AS cart_quantity, " +
             "c.created_at AS cart_created_at, " +
             "p.Id AS product_id, " +
@@ -37,11 +38,24 @@ public class CartDao implements ICartDao {
             "p.SeriesId AS product_series_id, " +
             "s.Name AS product_series_name, " +
             "p.Alias AS product_alias, " +
-            "p.Image AS product_image " +
+            "p.Image AS product_image, " +
+            "v.id AS variant_id, " +
+            "v.price AS variant_price, " +
+            "v.price_sale AS variant_price_sale, " +
+            "v.stock AS variant_stock, " +
+            "vc.id AS variant_color_id, " +
+            "vc.color_name AS variant_color_name, " +
+            "vc.color_code AS variant_color_code, " +
+            "vr.id AS variant_ram_rom_id, " +
+            "vr.ram AS variant_ram, " +
+            "vr.rom AS variant_rom " +
             "FROM tb_cart c " +
             "JOIN tb_product p ON c.product_id = p.Id " +
             "LEFT JOIN tb_productcategory pc ON p.CategoryId = pc.Id " +
-            "LEFT JOIN tb_series s ON p.SeriesId = s.Id ";
+            "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+            "LEFT JOIN tb_product_variants_new v ON c.variant_id = v.id " +
+            "LEFT JOIN tb_product_colors vc ON v.color_id = vc.id " +
+            "LEFT JOIN tb_product_ram_roms vr ON v.ram_rom_id = vr.id ";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -58,9 +72,26 @@ public class CartDao implements ICartDao {
 
     @Override
     public CartItem findByUserAndProduct(int userId, int productId) {
-        String sql = BASE_SELECT + "WHERE c.user_id = ? AND c.product_id = ?";
+        String sql = BASE_SELECT + "WHERE c.user_id = ? AND c.product_id = ? AND c.variant_id IS NULL";
         try {
             return jdbcTemplate.queryForObject(sql, new CartItemMapper(), userId, productId);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public CartItem findByUserProductAndVariant(int userId, int productId, Integer variantId) {
+        String sql;
+        Object[] params;
+        if (variantId == null) {
+            sql = BASE_SELECT + "WHERE c.user_id = ? AND c.product_id = ? AND c.variant_id IS NULL";
+            params = new Object[]{userId, productId};
+        } else {
+            sql = BASE_SELECT + "WHERE c.user_id = ? AND c.product_id = ? AND c.variant_id = ?";
+            params = new Object[]{userId, productId, variantId};
+        }
+        try {
+            return jdbcTemplate.queryForObject(sql, new CartItemMapper(), params);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -74,13 +105,18 @@ public class CartDao implements ICartDao {
 
     @Override
     public CartItem insert(CartItem item) {
-        String sql = "INSERT INTO tb_cart (user_id, product_id, quantity) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO tb_cart (user_id, product_id, variant_id, quantity) VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update((Connection con) -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, item.getUserId());
             ps.setInt(2, item.getProductId());
-            ps.setInt(3, item.getQuantity());
+            if (item.getVariantId() != null) {
+                ps.setInt(3, item.getVariantId());
+            } else {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            }
+            ps.setInt(4, item.getQuantity());
             return ps;
         }, keyHolder);
 
@@ -90,7 +126,7 @@ public class CartDao implements ICartDao {
         if (item.getId() > 0) {
             return findById(item.getId());
         }
-        return findByUserAndProduct(item.getUserId(), item.getProductId());
+        return findByUserProductAndVariant(item.getUserId(), item.getProductId(), item.getVariantId());
     }
 
     @Override

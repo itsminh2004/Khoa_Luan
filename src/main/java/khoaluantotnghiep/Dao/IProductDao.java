@@ -13,4 +13,5 @@ public interface IProductDao {
    Product findCategoryById(int categoryId);
    List<Product> findAllPaging(int offset, int limit);
    int countAll();
+   void reduceStock(int productId, int quantity);
 }

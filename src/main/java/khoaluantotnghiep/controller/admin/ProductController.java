@@ -14,6 +14,12 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import khoaluantotnghiep.utils.ExcelHelper;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 @Controller
 public class ProductController {
@@ -42,29 +48,43 @@ public class ProductController {
     @Autowired
     private ISeriesService seriesService;
 
+    @Autowired
+    private IBrandService brandService;
+
     // 🟢 Danh sách sản phẩm
     @RequestMapping("/admin-product")
-    public ModelAndView listProduct(@RequestParam(value = "page", defaultValue = "1")int page,
-                                    @RequestParam(value = "limit", defaultValue = "10")int limit) {
-        if(page<1) page=1;
-        if(limit<=0) limit=10;
+    public ModelAndView listProduct(@RequestParam(value = "page", defaultValue = "1") int page,
+                                    @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        if (page < 1)
+            page = 1;
+        if (limit <= 0)
+            limit = 10;
 
-        int totalItem= productService.countAll();
-        int totalPage=(int) Math.ceil((double)totalItem/limit);
+        int totalItem = productService.countAll();
+        int totalPage = (int) Math.ceil((double) totalItem / limit);
 
-        if(totalPage==0) totalPage=1;
-        if(page>totalPage) page=totalPage;
+        if (totalPage == 0)
+            totalPage = 1;
+        if (page > totalPage)
+            page = totalPage;
 
         int offset = (page - 1) * limit;
 
         ModelAndView mav = new ModelAndView("admin/product/index");
         List<Product> products = productService.findAllPaging(offset, limit);
 
-        // Lấy ảnh đại diện (ảnh đầu tiên)
-        for (Product p : products) {
-            List<ProductImage> imgs = productImageService.findByProductId(p.getId());
-            if (imgs != null && !imgs.isEmpty()) {
-                p.setImage(imgs.get(0).getImageUrl());
+        // Lấy ảnh đại diện
+        for (Product product : products) {
+            if(product.getImage() == null || product.getImage().isEmpty()){
+                List<ProductImage> imgs = productImageService.findByProductId(product.getId());
+                if (imgs != null) {
+                    for (ProductImage img : imgs) {
+                        if(img.getColorId()==null){
+                            product.setImage(img.getImageUrl());
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -82,6 +102,7 @@ public class ProductController {
         ModelAndView mav = new ModelAndView("admin/product/add");
         mav.addObject("product", new Product());
         mav.addObject("productCategories", productCategoryService.findAll());
+        mav.addObject("brands", brandService.findAll());
         return mav;
     }
 
@@ -96,7 +117,8 @@ public class ProductController {
 
         String uploadPath = request.getServletContext().getRealPath("/uploads");
         File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) uploadDir.mkdirs();
+        if (!uploadDir.exists())
+            uploadDir.mkdirs();
 
         // 1. Upload ảnh chính, lấy ảnh đầu tiên làm ảnh đại diện
         String mainImagePath = null;
@@ -165,12 +187,14 @@ public class ProductController {
                         // Upload ảnh cho màu này
                         if (request instanceof MultipartHttpServletRequest) {
                             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
-                            List<MultipartFile> colorImageFiles = multipartRequest.getFiles("colorImages[" + index + "]");
+                            List<MultipartFile> colorImageFiles = multipartRequest
+                                    .getFiles("colorImages[" + index + "]");
 
                             if (colorImageFiles != null && !colorImageFiles.isEmpty()) {
                                 for (MultipartFile colorFile : colorImageFiles) {
                                     if (colorFile != null && !colorFile.isEmpty()) {
-                                        String fileName = System.currentTimeMillis() + "_" + colorFile.getOriginalFilename();
+                                        String fileName = System.currentTimeMillis() + "_"
+                                                + colorFile.getOriginalFilename();
                                         File destFile = new File(uploadDir, fileName);
                                         colorFile.transferTo(destFile);
                                         String url = "/uploads/" + fileName;
@@ -280,7 +304,6 @@ public class ProductController {
         return "redirect:/admin-product";
     }
 
-
     @RequestMapping(value = "/admin-product-edit/{id}", method = RequestMethod.GET)
     public ModelAndView editProduct(@PathVariable("id") int id) {
         Product product = productService.findOne(id);
@@ -296,6 +319,7 @@ public class ProductController {
         mav.addObject("productCategories", categories);
         mav.addObject("productImages", images);
         mav.addObject("seriesList", seriesList);
+        mav.addObject("brands", brandService.findAll());
         mav.addObject("selectedCategoryId", product.getCategoryId());
         return mav;
     }
@@ -312,7 +336,8 @@ public class ProductController {
         product.setId(id);
         String uploadPath = request.getServletContext().getRealPath("/uploads");
         File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) uploadDir.mkdirs();
+        if (!uploadDir.exists())
+            uploadDir.mkdirs();
 
         // Lấy sản phẩm cũ để giữ lại ảnh nếu cần
         Product old = productService.findOne(id);
@@ -334,7 +359,8 @@ public class ProductController {
                     file.transferTo(destFile);
                     String url = "/uploads/" + fileName;
 
-                    // Nếu hiện chưa có ảnh đại diện (cũ hoặc do selectedImageId), dùng ảnh mới đầu tiên
+                    // Nếu hiện chưa có ảnh đại diện (cũ hoặc do selectedImageId), dùng ảnh mới đầu
+                    // tiên
                     if (product.getImage() == null || product.getImage().isEmpty()) {
                         product.setImage(url);
                     }
@@ -354,7 +380,6 @@ public class ProductController {
             }
         }
 
-
         // Set variant fields
         product.setHasVariants(hasVariants);
         product.setDefaultRam(defaultRam);
@@ -363,7 +388,6 @@ public class ProductController {
         productService.update(product);
         return "redirect:/admin-product";
     }
-
 
     @RequestMapping(value = "/admin-product-detail/{id}", method = RequestMethod.GET)
     public ModelAndView detail(@PathVariable("id") int id) {
@@ -381,7 +405,9 @@ public class ProductController {
         // Load related data for variants
         for (ProductVariantNew v : variantsNew) {
             v.setColor(productColorService.findById(v.getColorId()));
-            v.setRamRom(productRamRomService.findById(v.getRamRomId()));
+            if (v.getRamRomId() != null) {
+                v.setRamRom(productRamRomService.findById(v.getRamRomId()));
+            }
             // Load images for this variant (by color_id)
             List<ProductImage> variantImages = new java.util.ArrayList<>();
             for (ProductImage img : images) {
@@ -451,7 +477,7 @@ public class ProductController {
     @RequestMapping(value = "/admin-product/{id}/variant-new", method = RequestMethod.POST)
     public String addVariantNew(@PathVariable("id") int productId,
                                 @RequestParam("colorId") int colorId,
-                                @RequestParam("ramRomId") int ramRomId,
+                                @RequestParam(value = "ramRomId", required = false) Integer ramRomId,
                                 @RequestParam("price") BigDecimal price,
                                 @RequestParam(value = "priceSale", required = false) BigDecimal priceSale,
                                 @RequestParam("stock") int stock) {
@@ -483,7 +509,8 @@ public class ProductController {
 
         String uploadPath = request.getServletContext().getRealPath("/uploads");
         File uploadDir = new File(uploadPath);
-        if (!uploadDir.exists()) uploadDir.mkdirs();
+        if (!uploadDir.exists())
+            uploadDir.mkdirs();
 
         if (files != null) {
             for (MultipartFile file : files) {
@@ -521,13 +548,15 @@ public class ProductController {
     @RequestMapping(value = "/admin-product/{id}/specifications", method = RequestMethod.POST)
     public String addSpecificationsOneRow(
             @PathVariable("id") int productId,
-            @RequestParam Map<String, String> specs) {
+            HttpServletRequest request) {
 
-        for (Map.Entry<String, String> entry : specs.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
+        java.util.Enumeration<String> paramNames = request.getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String key = paramNames.nextElement();
+            String value = request.getParameter(key);
 
-            if (value != null && !value.trim().isEmpty()) {
+            // Bỏ qua các tham số hệ thống và ô trống
+            if (key != null && !key.startsWith("_") && !key.equals("id") && value != null && !value.trim().isEmpty()) {
                 ProductSpecification spec = new ProductSpecification();
                 spec.setProductId(productId);
                 spec.setKey(key);
@@ -546,10 +575,36 @@ public class ProductController {
         return "redirect:/admin-product-detail/" + productId;
     }
 
-
     @RequestMapping(value = "/admin-product/delete/{id}", method = RequestMethod.GET)
     public String deleteProduct(@PathVariable("id") int id) {
         productService.delete(id);
         return "redirect:/admin-product";
+    }
+
+    // 🟢 Nhập từ Excel
+    @RequestMapping(value = "/admin-product-import", method = RequestMethod.POST)
+    public String importExcel(@RequestParam("fileExcel") MultipartFile file) {
+        if (ExcelHelper.hasExcelFormat(file)) {
+            try {
+                List<Product> products = ExcelHelper.excelToProducts(file.getInputStream());
+                productService.saveAll(products);
+                return "redirect:/admin-product?importSuccess=true";
+            } catch (Exception e) {
+                return "redirect:/admin-product?importError=" + e.getMessage();
+            }
+        }
+        return "redirect:/admin-product?importError=InvalidFormat";
+    }
+
+    // 🟢 Xuất ra Excel
+    @RequestMapping(value = "/admin-product-export", method = RequestMethod.GET)
+    public ResponseEntity<Resource> exportExcel() {
+        String filename = "products_" + System.currentTimeMillis() + ".xlsx";
+        InputStreamResource file = new InputStreamResource(ExcelHelper.productsToExcel(productService.findAll()));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType(ExcelHelper.TYPE))
+                .body(file);
     }
 }

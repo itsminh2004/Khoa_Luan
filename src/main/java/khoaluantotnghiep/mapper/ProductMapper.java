@@ -43,6 +43,11 @@ public class ProductMapper implements RowMapper<Product> {
             p.setSeriesName(null);
         }
 
+        // Brand (optional - chỉ có khi SQL JOIN tb_brand)
+        try { p.setBrandId(rs.getInt("BrandId")); } catch (SQLException e) { /* ignore */ }
+        try { p.setBrandName(rs.getString("BrandName")); } catch (SQLException e) { /* ignore */ }
+        try { p.setBrandLogo(rs.getString("BrandLogo")); } catch (SQLException e) { /* ignore */ }
+
         return p;
     }
 }

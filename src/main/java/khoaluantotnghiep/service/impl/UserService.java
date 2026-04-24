@@ -121,4 +121,25 @@ public class UserService implements IUserService {
         }
         return false;
     }
+
+    @Override
+    public boolean updateProfile(int userId, String fullName) {
+        return userDao.updateProfile(userId, fullName);
+    }
+
+    @Override
+    public boolean changePassword(String email, String oldPassword, String newPassword) {
+        User user = userDao.findByEmail(email);
+        if (user != null && passwordEncoder.matches(oldPassword, user.getPassword())) {
+            String encodedNewPassword = passwordEncoder.encode(newPassword);
+            return userDao.updatePassword(email, encodedNewPassword);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean adminResetPassword(String email, String newPassword) {
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        return userDao.updatePassword(email, encodedNewPassword);
+    }
 }

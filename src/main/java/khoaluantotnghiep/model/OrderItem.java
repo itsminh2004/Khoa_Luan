@@ -6,10 +6,12 @@ public class OrderItem {
     private int id;
     private int orderId;
     private int productId;
+    private Integer variantId;
     private int quantity;
     private double price;
     private Timestamp createdAt;
     private Product product;
+    private ProductVariantNew variant;
 
     public int getId() {
         return id;
@@ -33,6 +35,14 @@ public class OrderItem {
 
     public void setProductId(int productId) {
         this.productId = productId;
+    }
+
+    public Integer getVariantId() {
+        return variantId;
+    }
+
+    public void setVariantId(Integer variantId) {
+        this.variantId = variantId;
     }
 
     public int getQuantity() {
@@ -65,6 +75,14 @@ public class OrderItem {
 
     public void setProduct(Product product) {
         this.product = product;
+    }
+
+    public ProductVariantNew getVariant() {
+        return variant;
+    }
+
+    public void setVariant(ProductVariantNew variant) {
+        this.variant = variant;
     }
 }
 

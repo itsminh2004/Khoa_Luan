@@ -22,6 +22,7 @@ public class WishlistDao implements IWishlistDao {
             "w.id AS wishlist_id, " +
             "w.user_id AS wishlist_user_id, " +
             "w.product_id AS wishlist_product_id, " +
+            "w.variant_id AS wishlist_variant_id, " +
             "w.created_at AS wishlist_created_at, " +
             "p.Id AS product_id, " +
             "p.Name AS product_name, " +
@@ -36,11 +37,24 @@ public class WishlistDao implements IWishlistDao {
             "p.SeriesId AS product_series_id, " +
             "s.Name AS product_series_name, " +
             "p.Alias AS product_alias, " +
-            "p.Image AS product_image " +
+            "p.Image AS product_image, " +
+            "v.id AS variant_id, " +
+            "v.price AS variant_price, " +
+            "v.price_sale AS variant_price_sale, " +
+            "v.stock AS variant_stock, " +
+            "vc.id AS variant_color_id, " +
+            "vc.color_name AS variant_color_name, " +
+            "vc.color_code AS variant_color_code, " +
+            "vr.id AS variant_ram_rom_id, " +
+            "vr.ram AS variant_ram, " +
+            "vr.rom AS variant_rom " +
             "FROM tb_wishlist w " +
             "JOIN tb_product p ON w.product_id = p.Id " +
             "LEFT JOIN tb_productcategory pc ON p.CategoryId = pc.Id " +
-            "LEFT JOIN tb_series s ON p.SeriesId = s.Id ";
+            "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+            "LEFT JOIN tb_product_variants_new v ON w.variant_id = v.id " +
+            "LEFT JOIN tb_product_colors vc ON v.color_id = vc.id " +
+            "LEFT JOIN tb_product_ram_roms vr ON v.ram_rom_id = vr.id ";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -57,9 +71,27 @@ public class WishlistDao implements IWishlistDao {
 
     @Override
     public WishlistItem findByUserAndProduct(int userId, int productId) {
-        String sql = BASE_SELECT + "WHERE w.user_id = ? AND w.product_id = ?";
+        // Find without variant - legacy support
+        String sql = BASE_SELECT + "WHERE w.user_id = ? AND w.product_id = ? AND w.variant_id IS NULL";
         try {
             return jdbcTemplate.queryForObject(sql, new WishlistItemMapper(), userId, productId);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public WishlistItem findByUserProductAndVariant(int userId, int productId, Integer variantId) {
+        String sql;
+        Object[] params;
+        if (variantId == null) {
+            sql = BASE_SELECT + "WHERE w.user_id = ? AND w.product_id = ? AND w.variant_id IS NULL";
+            params = new Object[]{userId, productId};
+        } else {
+            sql = BASE_SELECT + "WHERE w.user_id = ? AND w.product_id = ? AND w.variant_id = ?";
+            params = new Object[]{userId, productId, variantId};
+        }
+        try {
+            return jdbcTemplate.queryForObject(sql, new WishlistItemMapper(), params);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -73,12 +105,17 @@ public class WishlistDao implements IWishlistDao {
 
     @Override
     public WishlistItem insert(WishlistItem item) {
-        String sql = "INSERT INTO tb_wishlist (user_id, product_id) VALUES (?, ?)";
+        String sql = "INSERT INTO tb_wishlist (user_id, product_id, variant_id) VALUES (?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update((Connection con) -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, item.getUserId());
             ps.setInt(2, item.getProductId());
+            if (item.getVariantId() != null) {
+                ps.setInt(3, item.getVariantId());
+            } else {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            }
             return ps;
         }, keyHolder);
 
@@ -88,7 +125,7 @@ public class WishlistDao implements IWishlistDao {
         if (item.getId() > 0) {
             return findById(item.getId());
         }
-        return findByUserAndProduct(item.getUserId(), item.getProductId());
+        return findByUserProductAndVariant(item.getUserId(), item.getProductId(), item.getVariantId());
     }
 
     @Override

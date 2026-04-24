@@ -10,6 +10,24 @@ public class OrderRequest {
     private double subtotal;
     private double shipping;
     private double total;
+    private Integer couponId;
+    private double discountAmount;
+
+    public Integer getCouponId() {
+        return couponId;
+    }
+
+    public void setCouponId(Integer couponId) {
+        this.couponId = couponId;
+    }
+
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+    }
 
     public static class CustomerInfo {
         private String name;
@@ -88,6 +106,7 @@ public class OrderRequest {
 
     public static class OrderItemRequest {
         private int productId;
+        private Integer variantId; // ID của variant (màu sắc + RAM/ROM)
         private int quantity;
         private double price;
 
@@ -97,6 +116,14 @@ public class OrderRequest {
 
         public void setProductId(int productId) {
             this.productId = productId;
+        }
+
+        public Integer getVariantId() {
+            return variantId;
+        }
+
+        public void setVariantId(Integer variantId) {
+            this.variantId = variantId;
         }
 
         public int getQuantity() {

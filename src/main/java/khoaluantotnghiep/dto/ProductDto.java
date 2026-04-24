@@ -12,13 +12,19 @@ public class ProductDto {
     private String alias;
     private Integer seriesId;
     private String seriesName;
+    // brand
+    private Integer brandId;
+    private String brandName;
+    private String brandLogo;
     // frontend: danh sách biến thể + thông số kỹ thuật
     private java.util.List<ProductVariantDto> variants;
     private java.util.List<ProductSpecificationDto> specs;
+    private boolean active;
+
 
     public ProductDto() {}
 
-    public ProductDto(int id, String name, String description, double price, double priceSale, int stock, String image, String categoryName, String alias) {
+    public ProductDto(int id, String name, String description, double price, double priceSale, int stock, String image, String categoryName, String alias, boolean active) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -28,6 +34,7 @@ public class ProductDto {
         this.image = image;
         this.categoryName = categoryName;
         this.alias = alias;
+        this.active = active;
     }
 
     public Integer getSeriesId() { return seriesId; }
@@ -35,6 +42,15 @@ public class ProductDto {
 
     public String getSeriesName() { return seriesName; }
     public void setSeriesName(String seriesName) { this.seriesName = seriesName; }
+
+    public Integer getBrandId() { return brandId; }
+    public void setBrandId(Integer brandId) { this.brandId = brandId; }
+
+    public String getBrandName() { return brandName; }
+    public void setBrandName(String brandName) { this.brandName = brandName; }
+
+    public String getBrandLogo() { return brandLogo; }
+    public void setBrandLogo(String brandLogo) { this.brandLogo = brandLogo; }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -68,4 +84,7 @@ public class ProductDto {
 
     public java.util.List<ProductSpecificationDto> getSpecs() { return specs; }
     public void setSpecs(java.util.List<ProductSpecificationDto> specs) { this.specs = specs; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 }

@@ -66,4 +66,11 @@ public class BlogCommentDao implements IBlogCommentDao {
         String sql= BASE_SELECT + "WHERE c.post_id = ? ORDER BY c.created_at ASC";
         return jdbcTemplate.query(sql, new BlogCommentMapper(), postId);
     }
+
+    @Override
+    public BlogComment findById(int id) {
+        String sql = "SELECT * FROM tb_blog_comments WHERE id=?";
+        List<BlogComment> comments = jdbcTemplate.query(sql, new BlogCommentMapper(), id);
+        return comments.isEmpty() ? null : comments.get(0);
+    }
 }

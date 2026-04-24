@@ -29,7 +29,10 @@ public class OrderDao implements IOrderDao {
             "o.shipping_address AS order_shipping_address, " +
             "o.phone AS order_phone, " +
             "o.created_at AS order_created_at, " +
-            "o.updated_at AS order_updated_at " +
+            "o.updated_at AS order_updated_at, " +
+            "o.coupon_id AS order_coupon_id, " +
+            "o.discount_amount AS order_discount_amount, " +
+            "o.payment_method AS order_payment_method " +
             "FROM tb_order o ";
 
     @Autowired
@@ -71,8 +74,8 @@ public class OrderDao implements IOrderDao {
 
     @Override
     public Order insert(Order order) {
-        String sql = "INSERT INTO tb_order (user_id, customer_name, total_amount, status, shipping_address, phone) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tb_order (user_id, customer_name, total_amount, status, shipping_address, phone, coupon_id, discount_amount, payment_method) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update((Connection con) -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -82,6 +85,13 @@ public class OrderDao implements IOrderDao {
             ps.setString(4, order.getStatus() != null ? order.getStatus() : "PENDING");
             ps.setString(5, order.getShippingAddress());
             ps.setString(6, order.getPhone());
+            if (order.getCouponId() != null) {
+                ps.setInt(7, order.getCouponId());
+            } else {
+                ps.setNull(7, java.sql.Types.INTEGER);
+            }
+            ps.setDouble(8, order.getDiscountAmount());
+            ps.setString(9, order.getPaymentMethod() != null ? order.getPaymentMethod() : "COD");
             return ps;
         }, keyHolder);
 
@@ -93,12 +103,13 @@ public class OrderDao implements IOrderDao {
 
     @Override
     public void update(Order order) {
-        String sql = "UPDATE tb_order SET customer_name = ?, shipping_address = ?, phone = ?, status = ? WHERE id = ?";
+        String sql = "UPDATE tb_order SET customer_name = ?, shipping_address = ?, phone = ?, status = ?, payment_method = ? WHERE id = ?";
         jdbcTemplate.update(sql,
                 order.getCustomerName(),
                 order.getShippingAddress(),
                 order.getPhone(),
                 order.getStatus(),
+                order.getPaymentMethod(),
                 order.getId());
     }
 
@@ -120,6 +131,7 @@ public class OrderDao implements IOrderDao {
                 "oi.id AS order_item_id, " +
                 "oi.order_id AS order_item_order_id, " +
                 "oi.product_id AS order_item_product_id, " +
+                "oi.variant_id AS order_item_variant_id, " + // Added variant_id
                 "oi.quantity AS order_item_quantity, " +
                 "oi.price AS order_item_price, " +
                 "oi.created_at AS order_item_created_at, " +
@@ -136,25 +148,42 @@ public class OrderDao implements IOrderDao {
                 "p.SeriesId AS product_series_id, " +
                 "s.Name AS product_series_name, " +
                 "p.Alias AS product_alias, " +
-                "p.Image AS product_image " +
+                "p.Image AS product_image, " +
+                "v.id AS variant_id, " + // Join variant info
+                "v.price AS variant_price, " +
+                "v.price_sale AS variant_price_sale, " +
+                "v.color_id AS variant_color_id, " +
+                "v.ram_rom_id AS variant_ram_rom_id, " +
+                "vc.color_name AS variant_color_name, " +
+                "vc.color_code AS variant_color_code, " +
+                "vr.ram AS variant_ram, " +
+                "vr.rom AS variant_rom " +
                 "FROM tb_order_item oi " +
                 "JOIN tb_product p ON oi.product_id = p.Id " +
                 "LEFT JOIN tb_productcategory pc ON p.CategoryId = pc.Id " +
                 "LEFT JOIN tb_series s ON p.SeriesId = s.Id " +
+                "LEFT JOIN tb_product_variants_new v ON oi.variant_id = v.id " +
+                "LEFT JOIN tb_product_colors vc ON v.color_id = vc.id " +
+                "LEFT JOIN tb_product_ram_roms vr ON v.ram_rom_id = vr.id " +
                 "WHERE oi.order_id = ?";
         return jdbcTemplate.query(sql, new OrderItemMapper(), orderId);
     }
 
     @Override
     public OrderItem insertItem(OrderItem item) {
-        String sql = "INSERT INTO tb_order_item (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO tb_order_item (order_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update((Connection con) -> {
             PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setInt(1, item.getOrderId());
             ps.setInt(2, item.getProductId());
-            ps.setInt(3, item.getQuantity());
-            ps.setDouble(4, item.getPrice());
+            if (item.getVariantId() != null) {
+                ps.setInt(3, item.getVariantId());
+            } else {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            }
+            ps.setInt(4, item.getQuantity());
+            ps.setDouble(5, item.getPrice());
             return ps;
         }, keyHolder);
 
@@ -179,9 +208,78 @@ public class OrderDao implements IOrderDao {
     @Override
     public double getMonthlyRevenue(int year, int month) {
         String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM tb_order " +
-                "WHERE YEAR(created_at) = ? AND MONTH(created_at) = ?";
+                "WHERE YEAR(created_at) = ? AND MONTH(created_at) = ? AND status IN ('CONFIRMED', 'SHIPPING', 'DELIVERED')";
         Double revenue = jdbcTemplate.queryForObject(sql, Double.class, year, month);
         return revenue != null ? revenue : 0.0;
     }
-}
 
+    @Override
+    public double getTotalRevenue() {
+        String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM tb_order WHERE status IN ('CONFIRMED', 'SHIPPING', 'DELIVERED')";
+        Double revenue = jdbcTemplate.queryForObject(sql, Double.class);
+        return revenue != null ? revenue : 0.0;
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getTopSellingProducts(int limit) {
+        String sql = "SELECT p.Name, SUM(oi.quantity) as total_sold " +
+                "FROM tb_order_item oi " +
+                "JOIN tb_product p ON oi.product_id = p.Id " +
+                "JOIN tb_order o ON oi.order_id = o.id " +
+                "WHERE status IN ( 'CONFIRMED', 'SHIPPING', 'DELIVERED') " +
+                "GROUP BY p.Id " +
+                "ORDER BY total_sold DESC " +
+                "LIMIT ?";
+        return jdbcTemplate.queryForList(sql, limit);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getTopSellingProductsByMonth(int year, int month, int limit) {
+        String sql = "SELECT p.Name, SUM(oi.quantity) as total_sold " +
+                "FROM tb_order_item oi " +
+                "JOIN tb_product p ON oi.product_id = p.Id " +
+                "JOIN tb_order o ON oi.order_id = o.id " +
+                "WHERE status IN ( 'CONFIRMED', 'SHIPPING', 'DELIVERED') " +
+                "AND YEAR(o.created_at) = ? AND MONTH(o.created_at) = ? " +
+                "GROUP BY p.Id " +
+                "ORDER BY total_sold DESC " +
+                "LIMIT ?";
+        return jdbcTemplate.queryForList(sql, year, month, limit);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getDailyRevenue(int days) {
+        String sql = "SELECT DATE(created_at) as date, SUM(total_amount) as revenue " +
+                "FROM tb_order " +
+                "WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) AND status IN ('CONFIRMED', 'SHIPPING', 'DELIVERED') "
+                +
+                "GROUP BY DATE(created_at) " +
+                "ORDER BY DATE(created_at) ASC";
+        return jdbcTemplate.queryForList(sql, days);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getProductsSalesByMonth(int year, int month) {
+        String sql = "SELECT p.Id, p.Name, SUM(oi.quantity) as total_sold, SUM(oi.price * oi.quantity) as total_revenue "
+                +
+                "FROM tb_order_item oi " +
+                "JOIN tb_product p ON oi.product_id = p.Id " +
+                "JOIN tb_order o ON oi.order_id = o.id " +
+                "WHERE status IN ( 'CONFIRMED', 'SHIPPING', 'DELIVERED') "+
+                "AND YEAR(o.created_at) = ? AND MONTH(o.created_at) = ? " +
+                "GROUP BY p.Id " +
+                "ORDER BY total_revenue DESC";
+        return jdbcTemplate.queryForList(sql, year, month);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getDailyRevenueByMonth(int year, int month) {
+        String sql = "SELECT DAY(created_at) as day, SUM(total_amount) as revenue " +
+                "FROM tb_order " +
+                "WHERE YEAR(created_at) = ? AND MONTH(created_at) = ? " +
+                "AND status IN ('CONFIRMED', 'SHIPPING', 'DELIVERED') " +
+                "GROUP BY DAY(created_at) " +
+                "ORDER BY DAY(created_at) ASC";
+        return jdbcTemplate.queryForList(sql, year, month);
+    }
+}

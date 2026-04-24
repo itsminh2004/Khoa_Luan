@@ -13,6 +13,11 @@ public class SeriesMapper implements RowMapper<Series> {
         s.setId(rs.getInt("Id"));
         s.setName(rs.getString("Name"));
         s.setCategoryId(rs.getInt("CategoryId"));
+        try {
+            s.setCategoryName(rs.getString("categoryName"));
+        } catch (SQLException e) {
+
+        }
         return s;
     }
 }

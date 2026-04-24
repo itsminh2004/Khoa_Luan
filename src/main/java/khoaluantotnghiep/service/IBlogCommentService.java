@@ -9,4 +9,5 @@ public interface IBlogCommentService {
     void delete(int id);
     List<BlogComment> findAllWithDetails();
     List<BlogComment> findByPostId(int postId);
+    BlogComment findById(int id);
 }

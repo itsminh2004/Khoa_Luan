@@ -34,6 +34,19 @@ public class HomeController {
         int currentMonth = cal.get(Calendar.MONTH) + 1; // Calendar.MONTH bắt đầu từ 0
         double monthlyRevenue = orderService.getMonthlyRevenue(currentYear, currentMonth);
 
+        // Lấy top 5 sản phẩm bán chạy nhất tháng
+        java.util.List<java.util.Map<String, Object>> top5Products = orderService
+                .getTopSellingProductsByMonth(currentYear, currentMonth, 5);
+        mav.addObject("top5Products", top5Products);
+
+        if (!top5Products.isEmpty()) {
+            mav.addObject("topProduct", top5Products.get(0).get("Name"));
+            mav.addObject("topProductSold", top5Products.get(0).get("total_sold"));
+        } else {
+            mav.addObject("topProduct", "N/A");
+            mav.addObject("topProductSold", 0);
+        }
+
         // Truyền dữ liệu vào view
         mav.addObject("totalOrders", totalOrders);
         mav.addObject("totalProducts", totalProducts);
@@ -54,11 +67,20 @@ public class HomeController {
         int currentMonth = cal.get(Calendar.MONTH) + 1;
 
         // Nếu không có tham số, dùng tháng hiện tại
-        if (year == null) year = currentYear;
-        if (month == null) month = currentMonth;
+        if (year == null)
+            year = currentYear;
+        if (month == null)
+            month = currentMonth;
 
         // Lấy doanh thu tháng được chọn
         double monthlyRevenue = orderService.getMonthlyRevenue(year, month);
+
+        // Lấy danh sách sản phẩm bán trong tháng
+        java.util.List<java.util.Map<String, Object>> productSales = orderService.getProductsSalesByMonth(year, month);
+
+        // Lấy top sản phẩm bán chạy nhất tháng
+        java.util.List<java.util.Map<String, Object>> topSelling = orderService.getTopSellingProductsByMonth(year,
+                month, 5);
 
         // Lấy doanh thu các tháng gần đây (6 tháng gần nhất)
         java.util.List<java.util.Map<String, Object>> recentMonths = new java.util.ArrayList<>();
@@ -80,6 +102,8 @@ public class HomeController {
         mav.addObject("selectedYear", year);
         mav.addObject("selectedMonth", month);
         mav.addObject("monthlyRevenue", monthlyRevenue);
+        mav.addObject("productSales", productSales);
+        mav.addObject("topSelling", topSelling);
         mav.addObject("recentMonths", recentMonths);
         mav.addObject("currentYear", currentYear);
         mav.addObject("currentMonth", currentMonth);
@@ -88,8 +112,8 @@ public class HomeController {
     }
 
     private String getMonthName(int month) {
-        String[] months = {"", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
-                "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"};
+        String[] months = { "", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+                "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12" };
         return months[month];
     }
 

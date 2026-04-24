@@ -39,7 +39,7 @@ public class ProductVariantNewService implements IProductVariantNewService {
     }
 
     @Override
-    public ProductVariantNew findByColorIdAndRamRomId(int colorId, int ramRomId) {
+    public ProductVariantNew findByColorIdAndRamRomId(int colorId, Integer ramRomId) {
         return productVariantNewDao.findByColorIdAndRamRomId(colorId, ramRomId);
     }
 
@@ -53,5 +53,3 @@ public class ProductVariantNewService implements IProductVariantNewService {
         productVariantNewDao.deleteByColorId(colorId);
     }
 }
-
-

@@ -20,7 +20,10 @@ public class OrderMapper implements RowMapper<Order> {
         order.setPhone(rs.getString("order_phone"));
         order.setCreatedAt(rs.getTimestamp("order_created_at"));
         order.setUpdatedAt(rs.getTimestamp("order_updated_at"));
+        order.setCouponId(rs.getObject("order_coupon_id", Integer.class));
+        order.setDiscountAmount(rs.getDouble("order_discount_amount"));
+        order.setPaymentMethod(rs.getString("order_payment_method"));
+
         return order;
     }
 }
-

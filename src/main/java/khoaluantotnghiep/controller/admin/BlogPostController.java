@@ -9,8 +9,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.File;
 
 @Controller
 @RequestMapping("/admin-blog-post")
@@ -40,7 +43,13 @@ public class BlogPostController {
 
     // Xử lý thêm
     @PostMapping("/add")
-    public String save(@ModelAttribute BlogPost post, RedirectAttributes ra, HttpSession session) {
+    public String save(
+            @ModelAttribute BlogPost post,
+            @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+            HttpServletRequest request,
+            RedirectAttributes ra,
+            HttpSession session
+    ) {
         try {
             User currentUser = (User) session.getAttribute("user");
             if (currentUser == null) {
@@ -57,6 +66,17 @@ public class BlogPostController {
 
             if (post.getStatus() == null || post.getStatus().trim().isEmpty()) {
                 post.setStatus("DRAFT");
+            }
+
+            if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+                String uploadPath = request.getServletContext().getRealPath("/uploads");
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) uploadDir.mkdirs();
+
+                String fileName = System.currentTimeMillis() + "_" + thumbnailFile.getOriginalFilename();
+                File destFile = new File(uploadDir, fileName);
+                thumbnailFile.transferTo(destFile);
+                post.setThumbnail("/uploads/" + fileName);
             }
 
             blogPostService.save(post);
@@ -85,7 +105,12 @@ public class BlogPostController {
 
     // Xử lý cập nhật
     @PostMapping("/edit")
-    public String update(@ModelAttribute BlogPost post, RedirectAttributes ra) {
+    public String update(
+            @ModelAttribute BlogPost post,
+            @RequestParam(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
+            HttpServletRequest request,
+            RedirectAttributes ra
+    ) {
         try {
             if (post.getId() == null) {
                 ra.addFlashAttribute("error", "Thiếu thông tin bài viết cần cập nhật.");
@@ -95,6 +120,23 @@ public class BlogPostController {
             if (!isValidPost(post)) {
                 ra.addFlashAttribute("error", "Vui lòng điền đầy đủ tiêu đề, nội dung và chọn danh mục.");
                 return "redirect:/admin-blog-post/edit/" + post.getId();
+            }
+
+            BlogPost old = blogPostService.findById(post.getId());
+
+            if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+                String uploadPath = request.getServletContext().getRealPath("/uploads");
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) uploadDir.mkdirs();
+
+                String fileName = System.currentTimeMillis() + "_" + thumbnailFile.getOriginalFilename();
+                File destFile = new File(uploadDir, fileName);
+                thumbnailFile.transferTo(destFile);
+                post.setThumbnail("/uploads/" + fileName);
+            } else {
+                if (old != null && (post.getThumbnail() == null || post.getThumbnail().trim().isEmpty())) {
+                    post.setThumbnail(old.getThumbnail());
+                }
             }
 
             blogPostService.update(post);

@@ -15,10 +15,13 @@ public class ProductCategoryMapper implements RowMapper<ProductCategory> {
         category.setDescription(rs.getString("Description"));
         category.setImage(rs.getString("Image"));
         category.setAlias(rs.getString("Alias"));
-        category.setCreatedDate(rs.getTimestamp("CreatedDate") != null ?
-                rs.getTimestamp("CreatedDate").toLocalDateTime() : null);
-        category.setParentId(rs.getObject("ParentId") != null ? rs.getInt("ParentId") : null);
-//        category.setParentName(rs.getString("ParentName"));
+        category.setCreatedDate(rs.getTimestamp("CreatedDate")) ;
+        category.setRootCategoryId(rs.getObject("RootCategoryId") != null ? rs.getInt("RootCategoryId") : null);
+        try {
+            category.setRootCategoryName(rs.getString("RootCategoryName"));
+        } catch (SQLException e) {
+
+        }
 
         return category;
     }

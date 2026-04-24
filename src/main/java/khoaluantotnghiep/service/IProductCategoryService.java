@@ -13,5 +13,5 @@ public interface IProductCategoryService {
     List<ProductCategory> findParentCategories();
     List<ProductCategory> findAllPaging(int offset, int limit);
     int countAll();
-
+    void saveAll(List<ProductCategory> items);
 }
